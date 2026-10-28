@@ -17,11 +17,14 @@ RUN curl -L https://github.com/mhsanaei/3x-ui/releases/download/v3.8.5/x-ui-linu
     && rm /tmp/x-ui.tar.gz \
     && chmod +x /usr/local/x-ui/x-ui
 
-RUN mkdir -p /etc/x-ui /var/log/x-ui
+RUN mkdir -p /etc/x-ui /var/log/x-ui /etc/nginx
 
+# کپی کردن فایل‌های کانفیگ
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Railway پورت رو از طریق متغیر $PORT تزریق می‌کند
+# (اختیاری) اگر پلتفرم از متغیر PORT استفاده می‌کند، این خط به Nginx می‌فهماند که کدام پورت را باز کند
+ENV NGINX_PORT=3000
+
 CMD ["/start.sh"]
