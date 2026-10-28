@@ -2,10 +2,27 @@ worker_processes 1;
 events { worker_connections 1024; }
 
 http {
-    server {
-        listen ${NGINX_PORT};
+    # تنظیمات پایه برای جلوگیری از خطاهای احتمالی
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
 
-        # مسیر پنل وب (فوروارد به پورت داخلی 2053 که x-ui روش گوش می‌ده)
+    server {
+        # پورت اصلی که از متغیر محیطی خوانده می‌شود
+        listen ${NGINX_PORT};
+        server_name _;
+
+        # 1. بلاک سلامت (Health Check) - همیشه باید بالاتر از location / باشد
+        # این بلاک برای سیستم‌های ابری (مثل Railway/Lucity) ضروری است تا بدانند برنامه زنده است
+        location ~ ^/(health|healthz|readyz)$ {
+            access_log off;
+            return 200 "ok";
+            add_header Content-Type text/plain;
+        }
+
+        # 2. مسیر پنل وب (فوروارد به پورت داخلی 2053)
         location /managepanel/ {
             proxy_pass http://127.0.0.1:2053/managepanel/;
             proxy_http_version 1.1;
@@ -17,7 +34,7 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        # مسیر Subscription (ساب لینک) - فوروارد به پورت داخلی 2096
+        # 3. مسیر Subscription (ساب لینک) - فوروارد به پورت داخلی 2096
         location /sub/ {
             proxy_pass http://127.0.0.1:2096/sub/;
             proxy_http_version 1.1;
@@ -26,11 +43,9 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
         }
-location ~ ^/(health|healthz|readyz)$ {
-    return 200 "ok";
-    add_header Content-Type text/plain;
-}
-        # هر مسیر دیگه (اینباند VLESS/WebSocket) به پورت داخلی 8080
+
+        # 4. هر مسیر دیگه (اینباند VLESS/WebSocket) به پورت داخلی 8080
+        # این بلاک باید آخرین بلاک باشد تا مسیرهای بالایی را نادیده نگیرد
         location / {
             proxy_pass http://127.0.0.1:8080;
             proxy_http_version 1.1;
