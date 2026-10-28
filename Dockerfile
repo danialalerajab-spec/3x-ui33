@@ -21,7 +21,7 @@ RUN mkdir -p /etc/x-ui /var/log/x-ui /etc/nginx
 
 # کپی کردن فایل‌های کانفیگ
 COPY nginx.conf.template /etc/nginx/nginx.conf.template
-COPY start.sh /start.sh
+COPY run.sh /start.sh
 RUN chmod +x /start.sh
 
 # (اختیاری) اگر پلتفرم از متغیر PORT استفاده می‌کند، این خط به Nginx می‌فهماند که کدام پورت را باز کند
